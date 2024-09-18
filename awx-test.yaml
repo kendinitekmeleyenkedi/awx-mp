@@ -1,1 +1,9 @@
+--
+- name: check-disk-usage
+  hosts: all
+  become_user: root
+  become: true
 
+  tasks:
+    - name: check-users
+      command: df -lh
