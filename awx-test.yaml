@@ -5,7 +5,4 @@
   tasks:
     - name: check-disk-usage
       command: lsblk
-      register: display_output
-    - name: display_output
-      debug:
-        var: display_output.stdout_lines
+
