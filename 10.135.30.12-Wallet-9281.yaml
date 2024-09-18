@@ -5,6 +5,8 @@
   tasks:
     - name: 10.135.30.12-Wallet-9281
       command: sudo nohup /usr/lib/jvm/jdk1.8.0_181/bin/java -jar -Dspring.profiles.active=test /home/ca_ybakir/wallet.jar --server.port=9281 > /home/ca_ybakir/wallet.log 2>&1 &
+      async: 1
+      poll: 0
       register: display_output
 
     - name: display_output
