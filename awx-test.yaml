@@ -3,5 +3,10 @@
   hosts: all
   become: yes
   tasks:
-    - name: check-users
+    - name: check disk usage
       command: df -lh
+      register: disk_usage_output
+
+    - name: display disk usage
+      debug:
+        var: disk_usage_output.stdout
