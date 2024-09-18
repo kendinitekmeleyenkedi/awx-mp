@@ -1,12 +1,11 @@
 ---
-- name: check-users
+- name: check-disk-usage
   hosts: all
   become: yes
   tasks:
-    - name: check disk usage
+    - name: check-disk-usage
       command: df -lh
-      register: disk_usage_output
-
-    - name: display disk usage
+      register: display_output
+    - name: display_output
       debug:
-        var: disk_usage_output.stdout_lines
+        var: display_output.stdout_lines
