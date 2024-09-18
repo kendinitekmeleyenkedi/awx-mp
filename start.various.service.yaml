@@ -1,0 +1,17 @@
+---
+- name: start various.service
+  hosts: all
+  become: yes
+  tasks:
+    - name: start various.service
+      command: systemctl start various.service
+      register: display_output
+
+    - name: display_output
+      debug:
+        var: display_output.stdout_lines
+
+    - name: save-disk-usage-output-to-file-with-timestamp
+      copy:
+        content: "{{ display_output.stdout }}"
+        dest: "/tmp/awx_task_{{ ansible_date_time.date }}_{{ ansible_date_time.time | replace(':', '-') }}.log"
