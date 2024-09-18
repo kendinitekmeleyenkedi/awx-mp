@@ -1,8 +1,7 @@
 ---
 - name: check-users
   hosts: all
-  become: true
-
+  become: yes
   tasks:
     - name: check-users
       command: df -lh
