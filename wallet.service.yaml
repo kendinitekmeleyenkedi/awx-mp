@@ -1,9 +1,9 @@
 ---
-- name: wallet.service
+- name: start wallet.service
   hosts: all
   become: yes
   tasks:
-    - name: wallet.service
+    - name: stop wallet.service
       command: systemctl start wallet.service
       register: display_output
 
