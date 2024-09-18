@@ -1,9 +1,9 @@
 ---
-- name: 10.135.30.12-Wallet-9281
+- name: wallet.service
   hosts: all
   become: yes
   tasks:
-    - name: 10.135.30.12-Wallet-9281
+    - name: wallet.service
       command: systemctl start wallet.service
       register: display_output
 
