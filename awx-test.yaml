@@ -14,4 +14,4 @@
     - name: save-disk-usage-output-to-file-with-timestamp
       copy:
         content: "{{ display_output.stdout }}"
-        dest: "/tmp/awx_{{ ansible_date_time.date }}_{{ ansible_date_time.time | replace(':', '-') }}.txt"
+        dest: "/tmp/awx_task{{ ansible_date_time.date }}_{{ ansible_date_time.time | replace(':', '-') }}.log"
