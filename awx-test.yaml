@@ -4,7 +4,7 @@
   become: yes
   tasks:
     - name: check-disk-usage
-      command: df -lh
+      command: whoami
       register: display_output
     - name: display_output
       debug:
