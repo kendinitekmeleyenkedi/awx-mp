@@ -1,7 +1,6 @@
---
-- name: check-disk-usage
+---
+- name: check-users
   hosts: all
-  become_user: root
   become: true
 
   tasks:
