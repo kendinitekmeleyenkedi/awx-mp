@@ -1,0 +1,17 @@
+---
+- name: check-user-list
+  hosts: all
+  become: yes
+  tasks:
+    - name: check-user-list
+      command: more /etc/passwd | grep /bin/bash
+      register: display_output
+
+    - name: display_output
+      debug:
+        var: display_output.stdout_lines
+
+    - name: save-check-user-list-output-to-file-with-timestamp
+      copy:
+        content: "{{ display_output.stdout }}"
+        dest: "/tmp/awx_task_{{ ansible_date_time.date }}_{{ ansible_date_time.time | replace(':', '-') }}.log"
