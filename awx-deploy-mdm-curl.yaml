@@ -1,4 +1,4 @@
-a---
+---
 - name: Deploy UEMS Linux Agent
   hosts: all
   become: yes
