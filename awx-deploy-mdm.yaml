@@ -1,28 +1,24 @@
 ---
-- name: Deploy UEMS Linux Agent
+- name: Deploy UEMS Linux Agent with SFTP
   hosts: all
   become: yes
+  vars:
+    sftp_user: "ansible"
+    sftp_host: "10.0.102.22"
+    sftp_password: "Volcano7854"  # SFTP kullanıcısının parolası burada belirtiliyor.
+
   tasks:
-    - name: Create SFTP batch file
-      copy:
-        content: |
-          get *
-        dest: /tmp/sftp_batch.txt
-    
-    - name: Execute SFTP command with batch file
-      shell: |
-        echo | sftp -b /tmp/sftp_batch.txt 10.0.102.22:/ /tmp
+    - name: Copy files from SFTP server to /tmp
+      expect:
+        command: sftp -o StrictHostKeyChecking=no {{ sftp_user }}@{{ sftp_host }}:/* /tmp
+        responses:
+          "password:": "{{ sftp_password }}"
       register: sftp_output
       ignore_errors: yes
 
     - name: Display SFTP output
       debug:
         var: sftp_output.stdout_lines
-
-    - name: Change directory to /tmp
-      shell: cd /tmp
-      args:
-        chdir: /tmp
 
     - name: Make the binary executable
       file:
