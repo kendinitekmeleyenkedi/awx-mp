@@ -2,26 +2,21 @@
 - name: Deploy UEMS Linux Agent
   hosts: all
   become: yes
+  vars:
+    sftp_user: "ansible"
+    sftp_host: "10.0.102.22"
+    sftp_password: "Volcano7854"
+
   tasks:
     - name: Copy file from SFTP server
-      shell: sftp ansible@10.0.102.22:/* /tmp
+      shell: |
+        echo -e "open sftp://{{ sftp_user }}:{{ sftp_password }}@{{ sftp_host }}\nget UEMS_LinuxAgent.bin /tmp/\nbye" | sftp -b -
       register: sftp_output
       ignore_errors: yes
 
     - name: Display SFTP output
       debug:
         var: sftp_output.stdout_lines
-
-    - name: Change directory to /tmp
-      shell: cd /tmp
-      args:
-        chdir: /tmp
-
-    - name: Make the binary executable
-      file:
-        path: /tmp/UEMS_LinuxAgent.bin
-        mode: '0755'
-        state: file
 
     - name: Execute UEMS Linux Agent binary
       shell: ./UEMS_LinuxAgent.bin
