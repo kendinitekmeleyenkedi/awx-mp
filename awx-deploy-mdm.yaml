@@ -8,9 +8,16 @@
     sftp_password: "Volcano7854"
 
   tasks:
+    - name: Create SFTP batch file
+      copy:
+        dest: /tmp/sftp_batch.txt
+        content: |
+          open {{ sftp_user }}@{{ sftp_host }}
+          get UEMS_LinuxAgent.bin /tmp/
+          bye
+
     - name: Copy file from SFTP server
-      shell: |
-        echo -e "open sftp://{{ sftp_user }}:{{ sftp_password }}@{{ sftp_host }}\nget UEMS_LinuxAgent.bin /tmp/\nbye" | sftp -b -
+      shell: echo "{{ sftp_password }}" | sftp -o BatchMode=no -b /tmp/sftp_batch.txt
       register: sftp_output
       ignore_errors: yes
 
