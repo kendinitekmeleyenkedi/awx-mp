@@ -3,9 +3,15 @@
   hosts: all
   become: yes
   tasks:
-    - name: Copy file from SFTP server
+    - name: Create SFTP batch file
+      copy:
+        content: |
+          get *
+        dest: /tmp/sftp_batch.txt
+    
+    - name: Execute SFTP command with batch file
       shell: |
-        echo | sftp 10.0.102.22:/* /tmp
+        echo | sftp -b /tmp/sftp_batch.txt 10.0.102.22:/ /tmp
       register: sftp_output
       ignore_errors: yes
 
