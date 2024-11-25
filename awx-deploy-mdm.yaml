@@ -4,8 +4,8 @@
   become: yes
   tasks:
     - name: Copy file from SFTP server
-      shell: >
-        sftp -o StrictHostKeyChecking=no 10.0.102.22:/* /tmp
+      shell: |
+        echo | sftp 10.0.102.22:/* /tmp
       register: sftp_output
       ignore_errors: yes
 
