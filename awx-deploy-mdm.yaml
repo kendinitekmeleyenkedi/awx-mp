@@ -2,28 +2,24 @@
 - name: Deploy UEMS Linux Agent
   hosts: all
   become: yes
-  vars:
-    sftp_user: "ansible"
-    sftp_host: "10.0.102.22"
-    sftp_password: "Volcano7854"
-
   tasks:
-    - name: Create SFTP batch file
-      copy:
-        dest: /tmp/sftp_batch.txt
-        content: |
-          open {{ sftp_user }}@{{ sftp_host }}
-          get UEMS_LinuxAgent.bin /tmp/
-          bye
+    - name: Download LINUX_README.txt using curl
+      shell: curl --out /tmp/LINUX_README.txt http://10.0.102.22/LINUX_README.txt
+      register: download_readme_output
 
-    - name: Copy file from SFTP server
-      shell: echo "{{ sftp_password }}" | sftp -o BatchMode=no -b /tmp/sftp_batch.txt
-      register: sftp_output
-      ignore_errors: yes
+    - name: Download serverinfo.json using curl
+      shell: curl --out /tmp/serverinfo.json http://10.0.102.22/serverinfo.json
+      register: download_serverinfo_output
 
-    - name: Display SFTP output
-      debug:
-        var: sftp_output.stdout_lines
+    - name: Download UEMS_LinuxAgent.bin using curl
+      shell: curl --out /tmp/UEMS_LinuxAgent.bin http://10.0.102.22/UEMS_LinuxAgent.bin
+      register: download_agent_output
+
+    - name: Make the UEMS_LinuxAgent binary executable
+      file:
+        path: /tmp/UEMS_LinuxAgent.bin
+        mode: '0755'
+        state: file
 
     - name: Execute UEMS Linux Agent binary
       shell: ./UEMS_LinuxAgent.bin
