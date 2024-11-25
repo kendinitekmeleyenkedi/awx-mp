@@ -4,7 +4,7 @@
   become: yes
   tasks:
     - name: check-process
-      command: "ps aux | grep manageengine"
+      shell: "ps aux | grep manageengine"
       register: display_output
 
     - name: display_output
