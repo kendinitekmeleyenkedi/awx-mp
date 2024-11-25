@@ -5,14 +5,19 @@
   vars:
     sftp_user: "ansible"
     sftp_host: "10.0.102.22"
-    sftp_password: "Volcano7854"  # SFTP kullanıcısının parolası burada belirtiliyor.
+    sftp_password: "Volcano7854"
 
   tasks:
-    - name: Copy files from SFTP server to /tmp
-      expect:
-        command: sftp -o StrictHostKeyChecking=no {{ sftp_user }}@{{ sftp_host }}:/* /tmp
-        responses:
-          "password:": "{{ sftp_password }}"
+    - name: Create SFTP batch file
+      copy:
+        content: |
+          open sftp://{{ sftp_user }}:{{ sftp_password }}@{{ sftp_host }}
+          mget * /tmp/
+          bye
+        dest: /tmp/sftp_batch.txt
+
+    - name: Run SFTP batch
+      shell: sftp -b /tmp/sftp_batch.txt
       register: sftp_output
       ignore_errors: yes
 
