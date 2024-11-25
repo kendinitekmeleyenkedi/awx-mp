@@ -1,5 +1,5 @@
 ---
-- name: Deploy UEMS Linux Agent with SFTP
+- name: Download file via SFTP
   hosts: all
   become: yes
   vars:
@@ -8,7 +8,7 @@
     sftp_password: "Volcano7854"
 
   tasks:
-    - name: Perform SFTP transfer using inline commands
+    - name: Download file using SFTP
       shell: |
         echo -e "open sftp://{{ sftp_user }}:{{ sftp_password }}@{{ sftp_host }}\nget UEMS_LinuxAgent.bin /tmp/\nbye" | sftp -b -
       register: sftp_output
@@ -17,20 +17,3 @@
     - name: Display SFTP output
       debug:
         var: sftp_output.stdout_lines
-
-    - name: Make the binary executable
-      file:
-        path: /tmp/UEMS_LinuxAgent.bin
-        mode: '0755'
-        state: file
-
-    - name: Execute UEMS Linux Agent binary
-      shell: ./UEMS_LinuxAgent.bin
-      args:
-        chdir: /tmp
-      register: execute_output
-      ignore_errors: yes
-
-    - name: Display execution output
-      debug:
-        var: execute_output.stdout_lines
