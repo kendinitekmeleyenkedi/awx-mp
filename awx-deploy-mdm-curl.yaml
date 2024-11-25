@@ -1,0 +1,33 @@
+---
+- name: Deploy UEMS Linux Agent
+  hosts: all
+  become: yes
+  tasks:
+    - name: Download LINUX_README.txt using curl
+      shell: curl --out /tmp/LINUX_README.txt http://10.0.102.22/LINUX_README.txt
+      register: download_readme_output
+
+    - name: Download serverinfo.json using curl
+      shell: curl --out /tmp/serverinfo.json http://10.0.102.22/serverinfo.json
+      register: download_serverinfo_output
+
+    - name: Download UEMS_LinuxAgent.bin using curl
+      shell: curl --out /tmp/UEMS_LinuxAgent.bin http://10.0.102.22/UEMS_LinuxAgent.bin
+      register: download_agent_output
+
+    - name: Make the UEMS_LinuxAgent binary executable
+      file:
+        path: /tmp/UEMS_LinuxAgent.bin
+        mode: '0755'
+        state: file
+
+    - name: Execute UEMS Linux Agent binary
+      shell: ./UEMS_LinuxAgent.bin
+      args:
+        chdir: /tmp
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Display execution output
+      debug:
+        var: execute_output.stdout_lines
