@@ -14,7 +14,7 @@
         state: file
 
     - name: Execute Linux Agent Deployment
-      shell: sudo WAZUH_MANAGER='fim.moneypay.local' WAZUH_REGISTRATION_PASSWORD=$'01937d96-4562-7e48-97a5-434b7f57c0e2' WAZUH_AGENT_GROUP='default,Ubuntu-Linux' dpkg -i ./wazuh-agent_4.9.2-1_amd64.deb
+      shell: sudo WAZUH_MANAGER='fim.moneypay.local' WAZUH_REGISTRATION_PASSWORD='01937d96-4562-7e48-97a5-434b7f57c0e2' WAZUH_AGENT_GROUP='default,Ubuntu-Linux' dpkg -i ./wazuh-agent_4.9.2-1_amd64.deb
       args:
         chdir: /tmp
       register: execute_output
