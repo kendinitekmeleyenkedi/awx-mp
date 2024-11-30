@@ -1,0 +1,30 @@
+---
+- name: Deploy UEMS Linux Agent
+  hosts: all
+  become: yes
+  tasks:
+    - name: Download agent using curl
+      shell: curl -o wazuh-agent-4.9.2-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.9.2-1.x86_64.rpm
+      register: download_readme_output
+      
+    - name: Make the UEMS_LinuxAgent binary executable
+      file:
+        path: /tmp/UEMS_LinuxAgent.bin
+        mode: '0755'
+        state: file
+
+    - name: Execute UEMS Linux Agent binary
+      shell: sudo WAZUH_MANAGER='fim.moneypay.local' WAZUH_REGISTRATION_PASSWORD=$'01937d96-4562-7e48-97a5-434b7f57c0e2' WAZUH_AGENT_GROUP='default,Red-Hat-Linux' rpm -ihv wazuh-agent-4.9.2-1.x86_64.rpm 
+      args:
+        chdir: /tmp
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Execute Agent Service
+      shell: sudo systemctl daemon-reload && sudo systemctl enable wazuh-agent && sudo systemctl start wazuh-agent
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Display execution output
+      debug:
+        var: execute_output.stdout_lines
