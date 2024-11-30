@@ -20,7 +20,7 @@
       register: execute_output
       ignore_errors: yes
 
-    - name: Execute Agent Service
+    - name: Execute Linux Agent Deployment
       shell: sudo systemctl daemon-reload && sudo systemctl enable wazuh-agent && sudo systemctl start wazuh-agent
       register: execute_output
       ignore_errors: yes
