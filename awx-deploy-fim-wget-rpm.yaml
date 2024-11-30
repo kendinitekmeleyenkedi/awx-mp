@@ -4,7 +4,7 @@
   become: yes
   tasks:
     - name: Download Agent Using Curl
-      shell: curl --out /tmp/wazuh-agent-4.9.2-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.9.2-1.x86_64.rpm
+      shell: wget https://packages.wazuh.com/4.x/yum/wazuh-agent-4.9.2-1.x86_64.rpm -O /tmp/wazuh-agent-4.9.2-1.x86_64.rpm
       register: download_readme_output
       
     - name: Make the Wazuh Agent Binary Executable
