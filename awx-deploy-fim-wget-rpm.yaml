@@ -1,1 +1,29 @@
+---
+- name: Deploy Wazuh Linux Agent
+  hosts: all
+  become: yes
+  tasks:
+    - name: Download Agent Using Curl
+      shell: curl --out /tmp/wazuh-agent-4.9.2-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.9.2-1.x86_64.rpm
+      register: download_readme_output
+      
+    - name: Make the Wazuh Agent Binary Executable
+      file:
+        path: /tmp/wazuh-agent-4.9.2-1.x86_64.rpm
+        mode: '0755'
+        state: file
 
+    - name: Execute Linux Agent Deployment
+      shell: sudo WAZUH_MANAGER='fim.moneypay.local' WAZUH_REGISTRATION_PASSWORD=$'01937d96-4562-7e48-97a5-434b7f57c0e2' WAZUH_AGENT_GROUP='default,Red-Hat-Linux' rpm -ihv wazuh-agent-4.9.2-1.x86_64.rpm 
+      args:
+        chdir: /tmp
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Execute Linux Agent Deployment
+      shell: sudo systemctl daemon-reload && sudo systemctl enable wazuh-agent && sudo systemctl start wazuh-agent
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Display execution output
+      debug:
