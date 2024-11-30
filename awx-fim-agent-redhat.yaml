@@ -1,13 +1,13 @@
 ---
-- name: Deploy UEMS Linux Agent
+- name: Deploy Wazuh Linux Agent
   hosts: all
   become: yes
   tasks:
-    - name: Download agent using curl
+    - name: Download Agent Using Curl
       shell: curl --out /tmp/wazuh-agent-4.9.2-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.9.2-1.x86_64.rpm
       register: download_readme_output
       
-    - name: Make the UEMS_LinuxAgent binary executable
+    - name: Make the Wazuh Agent Binary Executable
       file:
         path: /tmp/wazuh-agent-4.9.2-1.x86_64.rpm
         mode: '0755'
