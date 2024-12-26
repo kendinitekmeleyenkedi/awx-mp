@@ -14,7 +14,7 @@
         state: file
 
     - name: Execute Linux Agent Deployment
-      shell: sudo yum install ./falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
+      shell: sudo yum install ./falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm -y
       args:
         chdir: /tmp
       register: execute_output
