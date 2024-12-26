@@ -4,19 +4,19 @@
   become: yes
   tasks:
     - name: Download Agent Using Wget
-      shell: curl --out /tmp/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm http://10.0.102.22/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm
+      shell: curl --out /tmp/falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm http://10.0.102.22/falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
       register: download_readme_output
       
     - name: Make the Falcon Agent Binary Executable
       file:
-        path: /tmp/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm
+        path: /tmp/falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
         mode: '0755'
         state: file
 
     - name: Execute Linux Agent Deployment
-      shell: sudo yum install /tmp/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm
+      shell: sudo yum install ./falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
       args:
-        #chdir: /tmp
+        chdir: /tmp
       register: execute_output
       ignore_errors: yes
 
