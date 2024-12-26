@@ -4,7 +4,7 @@
   become: yes
   tasks:
     - name: Download Agent Using Wget
-      shell: curl http://10.0.102.22/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm -O /tmp/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm
+      shell: curl --out /tmp/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm http://10.0.102.22/falcon-sensor-7.20.0-17306.rhel7.centos7.oracle7.x86_64.rpm
       register: download_readme_output
       
     - name: Make the Falcon Agent Binary Executable
