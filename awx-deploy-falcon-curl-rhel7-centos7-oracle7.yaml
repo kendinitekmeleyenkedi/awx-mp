@@ -30,5 +30,13 @@
       register: execute_output
       ignore_errors: yes
 
+    - name: Execute Linux Agent RPM Remove
+      shell: rm -rf ./falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
+      args:
+        chdir: /tmp
+      register: execute_output
+      ignore_errors: yes
+
     - name: Display execution output
       debug:
+
