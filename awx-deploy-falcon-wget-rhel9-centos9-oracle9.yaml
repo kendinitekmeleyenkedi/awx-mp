@@ -1,0 +1,41 @@
+---
+- name: Deploy Falcon Linux Agent
+  hosts: all
+  become: yes
+  tasks:
+    - name: Download Agent Using Wget
+      shell: curl --out /tmp/falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm http://10.0.102.22/falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
+      register: download_readme_output
+      
+    - name: Make the Falcon Agent Binary Executable
+      file:
+        path: /tmp/falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
+        mode: '0755'
+        state: file
+
+    - name: Execute Linux Agent Deployment
+      shell: sudo yum install ./falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm -y
+      args:
+        chdir: /tmp
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Execute Linux Agent Site Token
+      shell: sudo /opt/CrowdStrike/falconctl -s --cid=D5FADADB4CA54A53AC3075069FD05AC7-07
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Execute Linux Agent Service
+      shell: sudo systemctl start falcon-sensor && systemctl enable falcon-sensor && systemctl status falcon-sensor
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Execute Linux Agent RPM Remove
+      shell: rm -rf ./falcon-sensor-7.20.0-17306-rhel7-centos7-oracle7-x86-64.rpm
+      args:
+        chdir: /tmp
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Display execution output
+      debug:
