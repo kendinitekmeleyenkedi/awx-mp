@@ -4,7 +4,8 @@
   become: yes
   tasks:
     - name: check for ca_ybakir user
-      shell: grep 'ca_ybakir' /etc/passwd
+#      shell: grep 'ca_ybakir' /etc/passwd
+      shell: /etc/passwd | grep /bin/bash
       register: display_output
       ignore_errors: yes
 
