@@ -5,7 +5,7 @@
   tasks:
     - name: check for ca_ybakir user
 #      shell: grep 'ca_ybakir' /etc/passwd
-      shell: /etc/passwd | grep /bin/bash
+      shell: more /etc/passwd | grep /bin/bash
       register: display_output
       ignore_errors: yes
 
