@@ -31,7 +31,7 @@
       ignore_errors: yes
 
     - name: Execute Linux Agent RPM Remove
-      shell: rm -rf ./falcon-sensor-7.20.0-17306-rhel8-centos8-oracle8-x86-64.rpm
+      shell: rm -rf ./falcon-sensor_7.20.0-17306_amd64.deb
       args:
         chdir: /tmp
       register: execute_output
