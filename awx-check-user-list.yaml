@@ -5,8 +5,8 @@
   tasks:
     - name: check for ca_ybakir user
 #      shell: grep 'ca_ybakir' /etc/passwd
-      shell: more /etc/passwd | grep /bin/bash
-#      shell: usermod ca_vsozen -s /sbin/nologin
+#      shell: more /etc/passwd | grep /bin/bash
+      shell: usermod ca_vsozen -s /sbin/nologin
 #      shell: usermod ca_syaman -s /sbin/nologin
       register: display_output
       ignore_errors: yes
