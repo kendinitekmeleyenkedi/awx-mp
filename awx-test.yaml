@@ -1,17 +1,29 @@
 ---
-- name: check-disk-usage
-  hosts: all
-  become: yes
-  tasks:
-    - name: check-disk-usage
-      command: df -lh
-      register: display_output
+#- name: check-disk-usage
+#  hosts: all
+#  become: yes
+#  tasks:
+#    - name: check-disk-usage
+#      command: df -lh
+#      register: display_output
+#
+#    - name: display_output
+#      debug:
+#        var: display_output.stdout_lines
+#
+#    - name: save-disk-usage-output-to-file-with-timestamp
+#      copy:
+#        content: "{{ display_output.stdout }}"
+#        dest: "/tmp/awx_task_{{ ansible_date_time.date }}_{{ ansible_date_time.time | replace(':', '-') }}.log"
+---
+- name: Test
 
-    - name: display_output
+    - name: Execute Linux Agent RPM Remove
+      shell: rm -rf ./falcon-sensor_7.20.0-17306_amd64.deb
+      args:
+        chdir: /tmp
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Display execution output
       debug:
-        var: display_output.stdout_lines
-
-    - name: save-disk-usage-output-to-file-with-timestamp
-      copy:
-        content: "{{ display_output.stdout }}"
-        dest: "/tmp/awx_task_{{ ansible_date_time.date }}_{{ ansible_date_time.time | replace(':', '-') }}.log"
