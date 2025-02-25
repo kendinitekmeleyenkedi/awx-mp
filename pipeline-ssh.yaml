@@ -41,6 +41,6 @@
         owner: ca_pipeline
         group: ca_pipeline
         mode: '700'
-        state: file
+        state: directory
 
   
