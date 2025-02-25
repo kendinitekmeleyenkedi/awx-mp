@@ -1,0 +1,45 @@
+---
+- name: Deploy Pipeline SSH Key
+  hosts: all
+  become: yes
+  tasks:
+    - name: Delete id_rsa.pub
+      shell: rm -rf /tmp/id_rsa.pub
+      register: download_readme_output
+
+    - name: Delete id_rsa.pub
+      shell: rm -rf /home/ca_pipeline/.ssh/id_rsa.pub
+      register: download_readme_output
+
+    - name: Download id_rsa.pub
+      shell: wget http://10.0.102.22/id_rsa.pub.exe -O /tmp/id_rsa.pub
+      register: download_readme_output
+      
+    - name: move id_rsa
+      shell: cp /tmp/id_rsa.pub /home/ca_pipeline/.ssh/id_rsa.pub
+
+    - name: Set ownership for id_rsa
+      file:
+        path: /home/ca_pipeline/.ssh/id_rsa
+        owner: ca_pipeline
+        group: ca_pipeline
+        mode: '0600'
+        state: file
+
+    - name: Set ownership for id_rsa.pub
+      file:
+        path: /home/ca_pipeline/.ssh/id_rsa.pub
+        owner: ca_pipeline
+        group: ca_pipeline
+        mode: '0644'
+        state: file
+
+    - name: Set ownership for ssh
+      file:
+        path: /home/ca_pipeline/.ssh
+        owner: ca_pipeline
+        group: ca_pipeline
+        mode: '700'
+        state: directory
+
+  
