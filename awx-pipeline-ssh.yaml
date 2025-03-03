@@ -19,6 +19,9 @@
     - name: move id_rsa.pub
       shell: cp /tmp/id_rsa.pub /home/ca_pipeline/.ssh/id_rsa.pub
 
+    - name: move id_rsa.pub
+      shell: cat /home/ca_pipeline/.ssh/id_rsa.pub >> /home/ca_pipeline/.ssh/authorized_keys
+
     - name: Set ownership for id_rsa
       file:
         path: /home/ca_pipeline/.ssh/id_rsa
