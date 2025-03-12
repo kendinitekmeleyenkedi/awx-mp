@@ -1,0 +1,11 @@
+- name: Update sudoers for ca_pipeline #Eğer varsa günceller, yoksa ekler.
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure correct sudoers entry for ca_pipeline
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^ca_pipeline'
+        line: 'ca_pipeline ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
