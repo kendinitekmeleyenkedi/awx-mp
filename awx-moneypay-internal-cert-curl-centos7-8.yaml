@@ -4,12 +4,12 @@
   become: yes
   tasks:
 
-    - name: Copy Cert to Repo
+    - name: Remove Cert From Temp
       shell: sudo rm -rf /tmp/moneypay-internal-2025.crt
       register: execute_output
       ignore_errors: yes
 
-    - name: Copy Cert to Repo
+    - name: Remove Cert From Temp
       shell: sudo rm -rf /tmp/moneypay-internal-ca.pem
       register: execute_output
       ignore_errors: yes
@@ -34,5 +34,15 @@
 
     - name: Update Cert Repo
       shell: sudo update-ca-trust
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Remove Cert From Temp
+      shell: sudo rm -rf /tmp/moneypay-internal-2025.crt
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Remove Cert From Temp
+      shell: sudo rm -rf /tmp/moneypay-internal-ca.pem
       register: execute_output
       ignore_errors: yes
