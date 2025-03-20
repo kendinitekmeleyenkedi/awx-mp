@@ -28,7 +28,7 @@
       ignore_errors: yes
 
     - name: Copy Cert to Repo
-      shell: sudo cp /tmp//tmp/moneypay-internal-ca.pem /etc/pki/ca-trust/source/anchors
+      shell: sudo cp /tmp/moneypay-internal-ca.pem /etc/pki/ca-trust/source/anchors
       register: execute_output
       ignore_errors: yes
 
