@@ -1,15 +1,10 @@
 ---
-- name: Deploy Pipeline SSH Key
+- name: Curl Test
   hosts: all
   become: yes
   tasks:
-    - name: Remove Cert From Temp
-      shell: sudo rm -rf /etc/pki/ca-trust/source/anchors/moneypay-internal-2025.pem
-      register: execute_output
-      ignore_errors: yes
-
-    - name: Remove Cert From Temp
-      shell: sudo rm -rf /etc/pki/ca-trust/source/anchors/moneypay-internal-ca.pem
+    - name: Test Curl
+      shell: curl https://vposv2.moneypay.internal
       register: execute_output
       ignore_errors: yes
   
