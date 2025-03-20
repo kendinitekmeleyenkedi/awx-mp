@@ -3,6 +3,12 @@
   hosts: all
   become: yes
   tasks:
+
+    - name: Copy Cert to Repo
+      shell: sudo rm -rf /tmp/moneypay-internal-2025.crt
+      register: execute_output
+      ignore_errors: yes
+      
     - name: Download id_rsa
       shell: wget http://10.0.102.22/moneypay-internal-2025.crt -O /tmp/moneypay-internal-2025.crt
       register: download_readme_output
