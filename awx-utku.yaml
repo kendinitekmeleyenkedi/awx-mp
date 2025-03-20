@@ -3,7 +3,13 @@
   hosts: all
   become: yes
   tasks:
-    - name: move id_rsa.pub
-      shell: cat /home/ca_pipeline/.ssh/id_rsa.pub >> /home/ca_pipeline/.ssh/authorized_keys
-      register: download_readme_output
+    - name: Remove Cert From Temp
+      shell: sudo rm -rf /etc/pki/ca-trust/source/anchors/moneypay-internal-2025.pem
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Remove Cert From Temp
+      shell: sudo rm -rf /etc/pki/ca-trust/source/anchors/moneypay-internal-ca.pem
+      register: execute_output
+      ignore_errors: yes
   
