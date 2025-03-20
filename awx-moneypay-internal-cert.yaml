@@ -11,7 +11,7 @@
       shell: sudo cp moneypay-internal-2025.crt /usr/local/share/ca-certificates
       register: execute_output
       ignore_errors: yes
-	  
+
     - name: Update Cert Repo
       shell: sudo update-ca-certificates
       register: execute_output
