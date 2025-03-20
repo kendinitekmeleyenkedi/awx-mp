@@ -5,7 +5,7 @@
   tasks:
 
     - name: Remove Cert From Temp
-      shell: sudo rm -rf /tmp/moneypay-internal-2025.crt
+      shell: sudo rm -rf /tmp/moneypay-internal-2025.pem
       register: execute_output
       ignore_errors: yes
 
@@ -15,11 +15,11 @@
       ignore_errors: yes
 
     - name: Download Cert
-      shell: curl --out /tmp/moneypay-internal-2025.pem http://10.0.102.22/moneypay-internal-2025.pem
+      shell: curl --out /tmp/moneypay-internal-2025.pem http://10.0.102.22/moneypay-internal-2025.crt
       register: download_readme_output
 
     - name: Download CA
-      shell: curl --out /tmp/moneypay-internal-ca.pem http://10.0.102.22/moneypay-internal-ca.pem
+      shell: curl --out /tmp/moneypay-internal-ca.pem http://10.0.102.22/moneypay-internal-ca.crt
       register: download_readme_output
 
     - name: Copy Cert to Repo
@@ -38,7 +38,7 @@
       ignore_errors: yes
 
     - name: Remove Cert From Temp
-      shell: sudo rm -rf /tmp/moneypay-internal-2025.crt
+      shell: sudo rm -rf /tmp/moneypay-internal-2025.pem
       register: execute_output
       ignore_errors: yes
 
