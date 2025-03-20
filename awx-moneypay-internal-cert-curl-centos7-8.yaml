@@ -1,0 +1,38 @@
+---
+- name: Download Moneypay Internal Cert
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Copy Cert to Repo
+      shell: sudo rm -rf /tmp/moneypay-internal-2025.crt
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Copy Cert to Repo
+      shell: sudo rm -rf /tmp/moneypay-internal-ca.pem
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Download Cert
+      shell: curl --out /tmp/moneypay-internal-2025.pem http://10.0.102.22/moneypay-internal-2025.pem
+      register: download_readme_output
+
+    - name: Download CA
+      shell: curl --out /tmp/moneypay-internal-ca.pem http://10.0.102.22/moneypay-internal-ca.pem
+      register: download_readme_output
+
+    - name: Copy Cert to Repo
+      shell: sudo cp /tmp/moneypay-internal-2025.pem /etc/pki/ca-trust/source/anchors
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Copy Cert to Repo
+      shell: sudo cp /tmp//tmp/moneypay-internal-ca.pem /etc/pki/ca-trust/source/anchors
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Update Cert Repo
+      shell: sudo update-ca-trust
+      register: execute_output
+      ignore_errors: yes
