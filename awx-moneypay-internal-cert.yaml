@@ -8,7 +8,7 @@
       register: download_readme_output
 
     - name: Copy Cert to Repo
-      shell: sudo cp moneypay-internal-2025.crt /usr/local/share/ca-certificates
+      shell: sudo cp /tmp/moneypay-internal-2025.crt /usr/local/share/ca-certificates
       register: execute_output
       ignore_errors: yes
 
