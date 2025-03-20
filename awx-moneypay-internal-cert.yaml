@@ -1,5 +1,5 @@
 ---
-- name: Deploy Pipeline SSH Key
+- name: Download Moneypay Internal Cert
   hosts: all
   become: yes
   tasks:
