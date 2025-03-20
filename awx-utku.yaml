@@ -5,6 +5,11 @@
   tasks:
     - name: Test Curl
       shell: curl https://vposv2.moneypay.internal
-      register: execute_output
+      #register: execute_output
       ignore_errors: yes
+      register: display_output
+
+    - name: display_output
+      debug:
+        var: display_output.stdout_lines
   
