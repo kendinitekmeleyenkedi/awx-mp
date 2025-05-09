@@ -1,0 +1,12 @@
+---
+- name: FortiGate list admin
+  hosts: fortigate
+  gather_facts: no
+  tasks:
+    - name: show system admin | grep edit running
+      ansible.builtin.shell: 'show system admin | grep edit'
+      register: admin_list
+
+    - name: Output list
+      debug:
+        var: admin_list.stdout_lines
