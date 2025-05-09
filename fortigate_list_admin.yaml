@@ -1,12 +1,12 @@
 ---
-- name: FortiGate list admin
+- name: FortiGate üzerinde admin kullanıcılarını listele
   hosts: all
   gather_facts: no
   tasks:
-    - name: show system admin | grep edit running
-      ansible.builtin.shell: 'show system admin | grep edit'
-      register: admin_list
+    - name: Admin kullanıcıları listele
+      raw: show system admin | grep edit
+      register: admin_output
 
-    - name: Output list
+    - name: Çıktıyı göster
       debug:
-        var: admin_list.stdout_lines
+        var: admin_output.stdout_lines
