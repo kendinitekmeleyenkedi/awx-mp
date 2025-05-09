@@ -1,14 +1,27 @@
+---
+- name: FortiGate üzerinde yeni admin kullanıcısı oluştur
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  collections:
+    - fortinet.fortios
+
+  vars:
+    fortigate_host: "192.168.1.99"
+    fortigate_token: "TOKENINIZ"  # veya kullanıcı/şifre ile login olabilir
+
+  tasks:
+    - name: Yeni admin kullanıcısı oluştur
       fortios_system_admin:
-        host: "{{ fortigate_host }}"
-        username: "ansible"
-        password: "Volcano7854!"
         vdom: "root"
+        access_token: "{{ fortigate_token }}"
+        host: "{{ fortigate_host }}"
         https: true
         state: "present"
         system_admin:
-          name: "test01"
-          password: "Volcano7854!"
-          accprofile: "super_admin"
+          name: "yeniadmin"
+          password: "GizliParola123!"
+          accprofile: "super_admin"  # veya read_only, custom vs.
           vdom:
             - "root"
           allowaccess: "https ssh"
