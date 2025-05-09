@@ -1,12 +1,12 @@
 ---
-- name: FortiGate üzerinde admin kullanıcılarını listele
+- name: FortiGate list admin users
   hosts: all
   gather_facts: no
   tasks:
-    - name: Admin kullanıcıları listele
+    - name: FortiGate list admin users task
       raw: show system admin | grep edit
       register: admin_output
 
-    - name: Çıktıyı göster
+    - name: show output
       debug:
         var: admin_output.stdout_lines
