@@ -1,13 +1,13 @@
 ---
-- name: FortiGate üzerinde SSH ile yeni kullanıcı oluştur
+- name: FortiGate User Add
   hosts: all
   gather_facts: no
   tasks:
-    - name: Yeni kullanıcı oluştur (SSH CLI üzerinden)
+    - name: Create Nwe User
       ansible.builtin.raw: |
         config system admin
-        edit yeniadmin
-        set password GizliParola123
+        edit test01
+        set password Volcano7854
         set accprofile super_admin
         set vdom root
         set allowaccess ssh https
