@@ -1,0 +1,14 @@
+      fortios_system_admin:
+        host: "{{ fortigate_host }}"
+        username: "ansible"
+        password: "Volcano7854!"
+        vdom: "root"
+        https: true
+        state: "present"
+        system_admin:
+          name: "test01"
+          password: "Volcano7854!"
+          accprofile: "super_admin"
+          vdom:
+            - "root"
+          allowaccess: "https ssh"
