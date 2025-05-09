@@ -1,6 +1,6 @@
 ---
 - name: FortiGate list admin
-  hosts: fortigate
+  hosts: all
   gather_facts: no
   tasks:
     - name: show system admin | grep edit running
