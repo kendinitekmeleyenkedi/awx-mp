@@ -1,0 +1,12 @@
+---
+- name: never-user-expire
+  hosts: all
+  become: yes
+  tasks:
+    - name: Execute Linux Command
+      shell: chage -I -1 -m 0 -M -1 -E 99999 ca_pipeline
+      register: execute_output
+      ignore_errors: yes
+
+    - name: Display execution output
+      debug:
