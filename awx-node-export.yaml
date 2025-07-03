@@ -3,7 +3,10 @@
   hosts: all
   become: yes
   tasks:
-    - name: Create folder
-      shell: sudo mkdir -p /app/node_exporter/
-      register: execute_output
-      ignore_errors: yes
+#    - name: Create folder
+#      shell: sudo mkdir -p /app/node_exporter/
+#      register: execute_output
+#      ignore_errors: yes
+    - name: Download Node Exporter
+      shell: wget http://10.0.102.22/node_exporter-1.9.1.linux-amd64.tar.gz -O /app/node_exporter/node_exporter-1.9.1.linux-amd64.tar.gz
+      register: download_readme_output
