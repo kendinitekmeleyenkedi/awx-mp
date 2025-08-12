@@ -1,0 +1,127 @@
+---
+- name: Java trust store'a Moneypay Internal v2 sertifikasını ekle
+  hosts: all
+  become: yes
+  vars:
+    cert_alias: "moneypay_internal_crt_v2"
+    cert_tmp: "/tmp/moneypay-internal-2025-v2.crt"
+    keystore_java17: "/usr/lib/jvm/java-17-openjdk-amd64/lib/security/cacerts"
+    keystore_java8:  "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
+    keytool_bin: "/usr/bin/keytool"
+    keystore_pass: "changeit"
+
+  tasks:
+    - name: Copy Cert to Repo
+      shell: sudo rm -rf /tmp/moneypay-internal-2025-v2.crt
+      register: execute_output
+      ignore_errors: yes
+      
+    - name: Download id_rsa
+      shell: wget http://10.0.102.22/moneypay-internal-2025-v2.crt -O /tmp/moneypay-internal-2025-v2.crt
+      register: download_readme_output
+      
+    - name: keytool var mı kontrol et
+      ansible.builtin.stat:
+        path: "{{ keytool_bin }}"
+      register: keytool_stat
+
+    - name: keytool yoksa hata ver
+      ansible.builtin.fail:
+        msg: "keytool ({{ keytool_bin }}) bulunamadı. Lütfen openjdk paketlerini kurun."
+      when: not keytool_stat.stat.exists
+
+    - name: Java 17 keystore var mı?
+      ansible.builtin.stat:
+        path: "{{ keystore_java17 }}"
+      register: j17_ks
+
+    - name: (J17) Alias ön kontrol
+      ansible.builtin.command: >
+        {{ keytool_bin }} -list -alias {{ cert_alias }}
+        -keystore {{ keystore_java17 }}
+        -storepass {{ keystore_pass }}
+      register: j17_list_before
+      ignore_errors: true
+      changed_when: false
+      when: j17_ks.stat.exists
+
+    - name: (J17) Import et (yoksa)
+      ansible.builtin.command: >
+        {{ keytool_bin }} -import -trustcacerts
+        -keystore {{ keystore_java17 }}
+        -storepass {{ keystore_pass }}
+        -noprompt -alias {{ cert_alias }} -file {{ cert_tmp }}
+      register: j17_import
+      when:
+        - j17_ks.stat.exists
+        - j17_list_before.rc is defined
+        - j17_list_before.rc != 0
+
+    - name: (J17) Alias son kontrol
+      ansible.builtin.command: >
+        {{ keytool_bin }} -list -alias {{ cert_alias }}
+        -keystore {{ keystore_java17 }}
+        -storepass {{ keystore_pass }}
+      register: j17_list_after
+      ignore_errors: true
+      changed_when: false
+      when: j17_ks.stat.exists
+
+    - name: Java 8 keystore var mı?
+      ansible.builtin.stat:
+        path: "{{ keystore_java8 }}"
+      register: j8_ks
+
+    - name: (J8) Alias ön kontrol
+      ansible.builtin.command: >
+        {{ keytool_bin }} -list -alias {{ cert_alias }}
+        -keystore {{ keystore_java8 }}
+        -storepass {{ keystore_pass }}
+      register: j8_list_before
+      ignore_errors: true
+      changed_when: false
+      when: j8_ks.stat.exists
+
+    - name: (J8) Import et (yoksa)
+      ansible.builtin.command: >
+        {{ keytool_bin }} -import -trustcacerts
+        -keystore {{ keystore_java8 }}
+        -storepass {{ keystore_pass }}
+        -noprompt -alias {{ cert_alias }} -file {{ cert_tmp }}
+      register: j8_import
+      when:
+        - j8_ks.stat.exists
+        - j8_list_before.rc is defined
+        - j8_list_before.rc != 0
+
+    - name: (J8) Alias son kontrol
+      ansible.builtin.command: >
+        {{ keytool_bin }} -list -alias {{ cert_alias }}
+        -keystore {{ keystore_java8 }}
+        -storepass {{ keystore_pass }}
+      register: j8_list_after
+      ignore_errors: true
+      changed_when: false
+      when: j8_ks.stat.exists
+
+    - name: Özet rapor hazırla
+      ansible.builtin.set_fact:
+        java_trust_summary: |
+          === Java Trust Store Özeti ===
+          Host: {{ inventory_hostname }}
+
+          Java 17:
+            - Keystore var mı?: {{ 'EVET' if j17_ks.stat.exists else 'HAYIR' }}
+            - Alias öncesinde var mıydı?: {% if j17_ks.stat.exists %}{{ 'EVET' if j17_list_before.rc == 0 else 'HAYIR' }}{% else %}N/A{% endif %}
+            - Import yapıldı mı?: {% if j17_ks.stat.exists %}{% if j17_list_before.rc != 0 %}{{ 'EVET' if (j17_import is defined and j17_import.rc == 0) else 'HATA' }}{% else %}GEREK YOK{% endif %}{% else %}N/A{% endif %}
+            - Son durumda alias var mı?: {% if j17_ks.stat.exists %}{{ 'EVET' if j17_list_after.rc == 0 else 'HAYIR' }}{% else %}N/A{% endif %}
+
+          Java 8:
+            - Keystore var mı?: {{ 'EVET' if j8_ks.stat.exists else 'HAYIR' }}
+            - Alias öncesinde var mıydı?: {% if j8_ks.stat.exists %}{{ 'EVET' if j8_list_before.rc == 0 else 'HAYIR' }}{% else %}N/A{% endif %}
+            - Import yapıldı mı?: {% if j8_ks.stat.exists %}{% if j8_list_before.rc != 0 %}{{ 'EVET' if (j8_import is defined and j8_import.rc == 0) else 'HATA' }}{% else %}GEREK YOK{% endif %}{% else %}N/A{% endif %}
+            - Son durumda alias var mı?: {% if j8_ks.stat.exists %}{{ 'EVET' if j8_list_after.rc == 0 else 'HAYIR' }}{% else %}N/A{% endif %}
+
+    - name: Özet (AWX output)
+      ansible.builtin.debug:
+        msg: "{{ java_trust_summary }}"
