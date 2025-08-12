@@ -4,7 +4,7 @@
   become: yes
   vars:
     cert_alias_base: "moneypay_internal_crt_v2"
-    src_cert: "/tmp/moneypay-internal-2025-v2.crt"     # dosya zaten hostta mevcut varsayılıyor
+    src_cert: "/tmp/moneypay-internal-2025-v2.crt"
     work_dir: "/tmp/moneypay-certwork"
     cleaned_pem: "/tmp/moneypay-certwork/cleaned.pem"
     keystore_java17: "/usr/lib/jvm/java-17-openjdk-amd64/lib/security/cacerts"
@@ -13,16 +13,19 @@
     keystore_pass: "changeit"
 
   tasks:
-
     - name: Delete Old Temp Cert
-      shell: sudo rm -rf /tmp/moneypay-internal-2025-v2.crt
+      ansible.builtin.shell:
+        cmd: rm -f /tmp/moneypay-internal-2025-v2.crt
+        executable: /bin/bash
       register: execute_output
       ignore_errors: yes
-      
-    - name: Download id_rsa
-      shell: wget http://10.0.102.22/moneypay-internal-2025-v2.crt -O /tmp/moneypay-internal-2025-v2.crt
+
+    - name: Download cert
+      ansible.builtin.shell:
+        cmd: wget -q http://10.0.102.22/moneypay-internal-2025-v2.crt -O /tmp/moneypay-internal-2025-v2.crt
+        executable: /bin/bash
       register: download_readme_output
-      
+
     - name: Çalışma klasörü oluştur
       ansible.builtin.file:
         path: "{{ work_dir }}"
@@ -43,57 +46,52 @@
     # 1) Kaynak dosyayı X.509 PEM'e normalize et
     #######################################################################
     - name: İçerik tipini kaba kontrol et
-      ansible.builtin.shell: |
-        set -e
-        if grep -q "BEGIN CERTIFICATE" "{{ src_cert }}"; then
-          echo PEM_CERT
-        elif grep -q "BEGIN PKCS7" "{{ src_cert }}"; then
-          echo PEM_PKCS7
-        else
-          # DER PKCS7 olabilir; magic kontrolüne basit yaklaşım
-          # openssl pkcs7 -inform DER ile deneyelim; başarısızsa yine çıkacak
-          echo UNKNOWN
-        fi
-      args:
+      ansible.builtin.shell:
+        cmd: |
+          set -e
+          if grep -q "BEGIN CERTIFICATE" "{{ src_cert }}"; then
+            echo PEM_CERT
+          elif grep -q "BEGIN PKCS7" "{{ src_cert }}"; then
+            echo PEM_PKCS7
+          else
+            echo UNKNOWN
+          fi
         executable: /bin/bash
       register: fmt_probe
       changed_when: false
 
     - name: PKCS7 ise PEM'e dönüştür
-      ansible.builtin.shell: |
-        set -e
-        # PEM PKCS7 -> sertifikaları PEM'e dök
-        openssl pkcs7 -print_certs -in "{{ src_cert }}" -out "{{ cleaned_pem }}"
-      args:
+      ansible.builtin.shell:
+        cmd: |
+          set -e
+          openssl pkcs7 -print_certs -in "{{ src_cert }}" -out "{{ cleaned_pem }}"
         executable: /bin/bash
-      when: fmt_probe.stdout.strip() == "PEM_PKCS7"
+      when: fmt_probe.stdout | trim == "PEM_PKCS7"
 
     - name: PEM X.509 ise yalnızca CERT bloklarını ayıkla (private key vs. at)
-      ansible.builtin.shell: |
-        awk 'BEGIN{pass=0}
-             /-----BEGIN CERTIFICATE-----/{pass=1}
-             pass{print}
-             /-----END CERTIFICATE-----/{pass=0}' "{{ src_cert }}" > "{{ cleaned_pem }}"
-      args:
+      ansible.builtin.shell:
+        cmd: |
+          awk 'BEGIN{pass=0}
+               /-----BEGIN CERTIFICATE-----/{pass=1}
+               pass{print}
+               /-----END CERTIFICATE-----/{pass=0}' "{{ src_cert }}" > "{{ cleaned_pem }}"
         executable: /bin/bash
-      when: fmt_probe.stdout.strip() == "PEM_CERT"
+      when: fmt_probe.stdout | trim == "PEM_CERT"
 
     - name: Bilinmeyen formatı PKCS7 DER gibi deneyip PEM'e dönüştür
-      ansible.builtin.shell: |
-        set -e
-        openssl pkcs7 -inform DER -print_certs -in "{{ src_cert }}" -out "{{ cleaned_pem }}"
-      args:
+      ansible.builtin.shell:
+        cmd: |
+          set -e
+          openssl pkcs7 -inform DER -print_certs -in "{{ src_cert }}" -out "{{ cleaned_pem }}"
         executable: /bin/bash
-      when: fmt_probe.stdout.strip() == "UNKNOWN"
+      when: fmt_probe.stdout | trim == "UNKNOWN"
 
     - name: Son PEM geçerli mi? (openssl x509 ile doğrula)
-      ansible.builtin.shell: |
-        # En az bir cert bloğu okunabilmeli
-        grep -m1 -n "BEGIN CERTIFICATE" "{{ cleaned_pem }}" >/dev/null
-        # İlk bloğu doğrula
-        awk 'n==0,/-----END CERTIFICATE-----/{print} /-----END CERTIFICATE-----{n++}' "{{ cleaned_pem }}" \
-        | openssl x509 -noout -text >/dev/null
-      args:
+      ansible.builtin.shell:
+        cmd: |
+          grep -m1 -n "BEGIN CERTIFICATE" "{{ cleaned_pem }}" >/dev/null
+          awk 'n==0,/-----END CERTIFICATE-----/{print} /-----END CERTIFICATE-----{n++}' "{{ cleaned_pem }}" \
+          | openssl x509 -noout -text >/dev/null
         executable: /bin/bash
       register: pem_valid
       changed_when: false
@@ -113,20 +111,20 @@
       loop: "{{ query('fileglob', work_dir + '/part-*.pem') | default([], true) }}"
 
     - name: PEM'i parçalara böl (part-0001.pem, part-0002.pem, ...)
-      ansible.builtin.shell: |
-        c=0
-        out=""
-        while IFS= read -r line; do
-          if [[ "$line" == "-----BEGIN CERTIFICATE-----" ]]; then
-            c=$((c+1))
-            out="{{ work_dir }}/part-$(printf '%04d' "$c").pem"
-            echo "$line" > "$out"
-          elif [[ -n "$out" ]]; then
-            echo "$line" >> "$out"
-          fi
-        done < "{{ cleaned_pem }}"
-        echo $c
-      args:
+      ansible.builtin.shell:
+        cmd: |
+          c=0
+          out=""
+          while IFS= read -r line; do
+            if [[ "$line" == "-----BEGIN CERTIFICATE-----" ]]; then
+              c=$((c+1))
+              out="{{ work_dir }}/part-$(printf '%04d' "$c").pem"
+              echo "$line" > "$out"
+            elif [[ -n "$out" ]]; then
+              echo "$line" >> "$out"
+            fi
+          done < "{{ cleaned_pem }}"
+          echo $c
         executable: /bin/bash
       register: part_count
       changed_when: true
@@ -157,10 +155,10 @@
     # 4) Her parça için alias üret, Java 8/17'ye import et (yoksa)
     #######################################################################
     - name: Parça için subject CN çıkar (alias türetmek için)
-      ansible.builtin.shell: |
-        openssl x509 -in "{{ item }}" -noout -subject -nameopt RFC2253 \
-        | sed -E 's/^subject= *//; s/.*CN=([^,]+).*/\1/; s/[^A-Za-z0-9._-]+/_/g'
-      args:
+      ansible.builtin.shell:
+        cmd: |
+          openssl x509 -in "{{ item }}" -noout -subject -nameopt RFC2253 \
+          | sed -E 's/^subject= *//; s/.*CN=([^,]+).*/\1/; s/[^A-Za-z0-9._-]+/_/g'
         executable: /bin/bash
       register: part_cn
       changed_when: false
