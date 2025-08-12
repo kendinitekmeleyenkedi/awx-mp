@@ -1,295 +1,131 @@
 ---
-- name: Java trust store'a Moneypay Internal v2 sertifikasını ekle (sağlamlaştırılmış)
+- name: Java trust store'a Moneypay Internal v2 sertifikasını ekle
   hosts: all
   become: yes
   vars:
-    cert_alias_base: "moneypay_internal_crt_v2"
-    src_cert: "/tmp/moneypay-internal-2025-v2.crt"
-    work_dir: "/tmp/moneypay-certwork"
-    cleaned_pem: "/tmp/moneypay-certwork/cleaned.pem"
-    keystore_java17: "/usr/lib/jvm/java-17-openjdk-amd64/lib/security/cacerts"
-    keystore_java8:  "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
-    keytool_bin: "/usr/bin/keytool"
+    cert_file: "/tmp/moneypay-internal-2025-v2.crt"
+    cert_alias: "moneypay_internal_crt_v2"
     keystore_pass: "changeit"
+    keytool_bin: "/usr/bin/keytool"
+    ks_java17: "/usr/lib/jvm/java-17-openjdk-amd64/lib/security/cacerts"
+    ks_java8:  "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
 
   tasks:
+
     - name: Delete Old Temp Cert
-      ansible.builtin.shell:
-        cmd: rm -f /tmp/moneypay-internal-2025-v2.crt
-        executable: /bin/bash
+      shell: sudo rm -rf /tmp/moneypay-internal-2025-v2.crt
       register: execute_output
       ignore_errors: yes
-
-    - name: Download cert
-      ansible.builtin.shell:
-        cmd: wget -q http://10.0.102.22/moneypay-internal-2025-v2.crt -O /tmp/moneypay-internal-2025-v2.crt
-        executable: /bin/bash
+      
+    - name: Download id_rsa
+      shell: wget http://10.0.102.22/moneypay-internal-2025-v2.crt -O /tmp/moneypay-internal-2025-v2.crt
       register: download_readme_output
-
-    - name: Çalışma klasörü oluştur
-      ansible.builtin.file:
-        path: "{{ work_dir }}"
-        state: directory
-        mode: "0755"
-
-    - name: keytool mevcudiyetini kontrol et
-      ansible.builtin.stat:
+      
+    - name: keytool var mı?
+      stat:
         path: "{{ keytool_bin }}"
       register: keytool_stat
 
     - name: keytool yoksa hata ver
-      ansible.builtin.fail:
-        msg: "keytool ({{ keytool_bin }}) bulunamadı. Lütfen openjdk paketlerini kurun."
+      fail:
+        msg: "keytool bulunamadı ({{ keytool_bin }}). Lütfen OpenJDK kurun."
       when: not keytool_stat.stat.exists
 
-    #######################################################################
-    # 1) Kaynak dosyayı X.509 PEM'e normalize et
-    #######################################################################
-    - name: İçerik tipini kaba kontrol et
-      ansible.builtin.shell:
-        cmd: |
-          set -e
-          if grep -q "BEGIN CERTIFICATE" "{{ src_cert }}"; then
-            echo PEM_CERT
-          elif grep -q "BEGIN PKCS7" "{{ src_cert }}"; then
-            echo PEM_PKCS7
-          else
-            echo UNKNOWN
-          fi
-        executable: /bin/bash
-      register: fmt_probe
-      changed_when: false
-
-    - name: PKCS7 ise PEM'e dönüştür
-      ansible.builtin.shell:
-        cmd: |
-          set -e
-          openssl pkcs7 -print_certs -in "{{ src_cert }}" -out "{{ cleaned_pem }}"
-        executable: /bin/bash
-      when: fmt_probe.stdout | trim == "PEM_PKCS7"
-
-    - name: PEM X.509 ise yalnızca CERT bloklarını ayıkla (private key vs. at)
-      ansible.builtin.shell:
-        cmd: |
-          awk 'BEGIN{pass=0}
-               /-----BEGIN CERTIFICATE-----/{pass=1}
-               pass{print}
-               /-----END CERTIFICATE-----/{pass=0}' "{{ src_cert }}" > "{{ cleaned_pem }}"
-        executable: /bin/bash
-      when: fmt_probe.stdout | trim == "PEM_CERT"
-
-    - name: Bilinmeyen formatı PKCS7 DER gibi deneyip PEM'e dönüştür
-      ansible.builtin.shell:
-        cmd: |
-          set -e
-          openssl pkcs7 -inform DER -print_certs -in "{{ src_cert }}" -out "{{ cleaned_pem }}"
-        executable: /bin/bash
-      when: fmt_probe.stdout | trim == "UNKNOWN"
-
-    - name: Son PEM geçerli mi? (openssl x509 ile doğrula)
-      ansible.builtin.shell:
-        cmd: |
-          grep -m1 -n "BEGIN CERTIFICATE" "{{ cleaned_pem }}" >/dev/null
-          awk 'n==0,/-----END CERTIFICATE-----/{print} /-----END CERTIFICATE-----{n++}' "{{ cleaned_pem }}" \
-          | openssl x509 -noout -text >/dev/null
-        executable: /bin/bash
-      register: pem_valid
-      changed_when: false
-
-    - name: Geçersiz sertifika formatı ise fail et
-      ansible.builtin.fail:
-        msg: "Sertifika X.509 değil veya okunamadı: {{ src_cert }} (keytool hatası: 'Input not an X.509 certificate' buna sebep olur)"
-      when: pem_valid.rc != 0
-
-    #######################################################################
-    # 2) PEM chain'i tek tek dosyalara böl
-    #######################################################################
-    - name: Mevcut parçaları temizle
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop: "{{ query('fileglob', work_dir + '/part-*.pem') | default([], true) }}"
-
-    - name: PEM'i parçalara böl (part-0001.pem, part-0002.pem, ...)
-      ansible.builtin.shell:
-        cmd: |
-          c=0
-          out=""
-          while IFS= read -r line; do
-            if [[ "$line" == "-----BEGIN CERTIFICATE-----" ]]; then
-              c=$((c+1))
-              out="{{ work_dir }}/part-$(printf '%04d' "$c").pem"
-              echo "$line" > "$out"
-            elif [[ -n "$out" ]]; then
-              echo "$line" >> "$out"
-            fi
-          done < "{{ cleaned_pem }}"
-          echo $c
-        executable: /bin/bash
-      register: part_count
-      changed_when: true
-
-    - name: Parça listesi oluştur
-      ansible.builtin.set_fact:
-        pem_parts: "{{ query('fileglob', work_dir + '/part-*.pem') | sort }}"
-
-    - name: Hiç parça yoksa fail
-      ansible.builtin.fail:
-        msg: "PEM içinde sertifika bloğu bulunamadı."
-      when: pem_parts | length == 0
-
-    #######################################################################
-    # 3) Keystore'ları tespit et
-    #######################################################################
+    ######################################################################
+    # Java 17
+    ######################################################################
     - name: Java 17 keystore var mı?
-      ansible.builtin.stat:
-        path: "{{ keystore_java17 }}"
+      stat:
+        path: "{{ ks_java17 }}"
       register: j17_ks
 
-    - name: Java 8 keystore var mı?
-      ansible.builtin.stat:
-        path: "{{ keystore_java8 }}"
-      register: j8_ks
-
-    #######################################################################
-    # 4) Her parça için alias üret, Java 8/17'ye import et (yoksa)
-    #######################################################################
-    - name: Parça için subject CN çıkar (alias türetmek için)
-      ansible.builtin.shell:
-        cmd: |
-          openssl x509 -in "{{ item }}" -noout -subject -nameopt RFC2253 \
-          | sed -E 's/^subject= *//; s/.*CN=([^,]+).*/\1/; s/[^A-Za-z0-9._-]+/_/g'
-        executable: /bin/bash
-      register: part_cn
+    - name: (J17) Alias öncesinde var mı?
+      command: >
+        {{ keytool_bin }} -list -alias {{ cert_alias }}
+        -keystore {{ ks_java17 }} -storepass {{ keystore_pass }}
+      register: j17_before
       changed_when: false
-      loop: "{{ pem_parts }}"
-      loop_control:
-        label: "{{ item | basename }}"
-
-    - name: Alias haritası oluştur
-      ansible.builtin.set_fact:
-        alias_map: >-
-          {{
-            dict(pem_parts |
-                 zip(part_cn.results | map(attribute='stdout') | list))
-          }}
-
-    # Java 17 için import/liste
-    - name: (J17) Her parça için alias ön kontrol
-      ansible.builtin.command: >
-        {{ keytool_bin }} -list -alias {{ (alias_map[item] | default('')) | length > 0
-          | ternary(cert_alias_base ~ '_J17_' ~ (alias_map[item] | lower), cert_alias_base ~ '_J17_' ~ (item | basename | regex_replace('[^0-9]',''))) }}
-        -keystore {{ keystore_java17 }}
-        -storepass {{ keystore_pass }}
-      register: j17_list_before
       ignore_errors: true
-      changed_when: false
       when: j17_ks.stat.exists
-      loop: "{{ pem_parts }}"
-      loop_control:
-        label: "{{ item | basename }}"
 
-    - name: (J17) Import et (yoksa)
-      ansible.builtin.command: >
+    - name: (J17) Import et (alias yoksa)
+      command: >
         {{ keytool_bin }} -import -trustcacerts
-        -keystore {{ keystore_java17 }}
-        -storepass {{ keystore_pass }} -noprompt
-        -alias {{ (alias_map[item] | default('')) | length > 0
-          | ternary(cert_alias_base ~ '_J17_' ~ (alias_map[item] | lower), cert_alias_base ~ '_J17_' ~ (item | basename | regex_replace('[^0-9]',''))) }}
-        -file {{ item }}
+        -keystore {{ ks_java17 }} -storepass {{ keystore_pass }}
+        -noprompt -alias {{ cert_alias }} -file {{ cert_file }}
       register: j17_import
       when:
         - j17_ks.stat.exists
-        - (j17_list_before.results[ansible_loop.index0].rc is defined and j17_list_before.results[ansible_loop.index0].rc != 0)
-      loop: "{{ pem_parts }}"
-      loop_control:
-        label: "{{ item | basename }}"
+        - j17_before.rc is defined
+        - j17_before.rc != 0
 
-    - name: (J17) Son kontrol
-      ansible.builtin.command: >
-        {{ keytool_bin }} -list -alias {{ (alias_map[item] | default('')) | length > 0
-          | ternary(cert_alias_base ~ '_J17_' ~ (alias_map[item] | lower), cert_alias_base ~ '_J17_' ~ (item | basename | regex_replace('[^0-9]',''))) }}
-        -keystore {{ keystore_java17 }}
-        -storepass {{ keystore_pass }}
-      register: j17_list_after
-      ignore_errors: true
+    - name: (J17) Son kontrol (detaylı liste)
+      command: >
+        {{ keytool_bin }} -v -list -keystore {{ ks_java17 }}
+        -storepass {{ keystore_pass }} -alias {{ cert_alias }}
+      register: j17_after
       changed_when: false
+      ignore_errors: true
       when: j17_ks.stat.exists
-      loop: "{{ pem_parts }}"
-      loop_control:
-        label: "{{ item | basename }}"
 
-    # Java 8 için import/liste
-    - name: (J8) Her parça için alias ön kontrol
-      ansible.builtin.command: >
-        {{ keytool_bin }} -list -alias {{ (alias_map[item] | default('')) | length > 0
-          | ternary(cert_alias_base ~ '_J8_' ~ (alias_map[item] | lower), cert_alias_base ~ '_J8_' ~ (item | basename | regex_replace('[^0-9]',''))) }}
-        -keystore {{ keystore_java8 }}
-        -storepass {{ keystore_pass }}
-      register: j8_list_before
-      ignore_errors: true
+    ######################################################################
+    # Java 8
+    ######################################################################
+    - name: Java 8 keystore var mı?
+      stat:
+        path: "{{ ks_java8 }}"
+      register: j8_ks
+
+    - name: (J8) Alias öncesinde var mı?
+      command: >
+        {{ keytool_bin }} -list -alias {{ cert_alias }}
+        -keystore {{ ks_java8 }} -storepass {{ keystore_pass }}
+      register: j8_before
       changed_when: false
+      ignore_errors: true
       when: j8_ks.stat.exists
-      loop: "{{ pem_parts }}"
-      loop_control:
-        label: "{{ item | basename }}"
 
-    - name: (J8) Import et (yoksa)
-      ansible.builtin.command: >
+    - name: (J8) Import et (alias yoksa)
+      command: >
         {{ keytool_bin }} -import -trustcacerts
-        -keystore {{ keystore_java8 }}
-        -storepass {{ keystore_pass }} -noprompt
-        -alias {{ (alias_map[item] | default('')) | length > 0
-          | ternary(cert_alias_base ~ '_J8_' ~ (alias_map[item] | lower), cert_alias_base ~ '_J8_' ~ (item | basename | regex_replace('[^0-9]',''))) }}
-        -file {{ item }}
+        -keystore {{ ks_java8 }} -storepass {{ keystore_pass }}
+        -noprompt -alias {{ cert_alias }} -file {{ cert_file }}
       register: j8_import
       when:
         - j8_ks.stat.exists
-        - (j8_list_before.results[ansible_loop.index0].rc is defined and j8_list_before.results[ansible_loop.index0].rc != 0)
-      loop: "{{ pem_parts }}"
-      loop_control:
-        label: "{{ item | basename }}"
+        - j8_before.rc is defined
+        - j8_before.rc != 0
 
-    - name: (J8) Son kontrol
-      ansible.builtin.command: >
-        {{ keytool_bin }} -list -alias {{ (alias_map[item] | default('')) | length > 0
-          | ternary(cert_alias_base ~ '_J8_' ~ (alias_map[item] | lower), cert_alias_base ~ '_J8_' ~ (item | basename | regex_replace('[^0-9]',''))) }}
-        -keystore {{ keystore_java8 }}
-        -storepass {{ keystore_pass }}
-      register: j8_list_after
-      ignore_errors: true
+    - name: (J8) Son kontrol (detaylı liste)
+      command: >
+        {{ keytool_bin }} -v -list -keystore {{ ks_java8 }}
+        -storepass {{ keystore_pass }} -alias {{ cert_alias }}
+      register: j8_after
       changed_when: false
+      ignore_errors: true
       when: j8_ks.stat.exists
-      loop: "{{ pem_parts }}"
-      loop_control:
-        label: "{{ item | basename }}"
 
-    #######################################################################
-    # 5) Özet
-    #######################################################################
+    ######################################################################
+    # Özet
+    ######################################################################
     - name: Özet (AWX output)
-      ansible.builtin.debug:
+      debug:
         msg: |
           === Java Trust Store Özeti ===
           Host: {{ inventory_hostname }}
-          Parça sayısı: {{ pem_parts | length }}
 
-          Java 17: {{ 'VAR' if j17_ks.stat.exists else 'YOK' }}
-          {% if j17_ks.stat.exists %}
-          {% for i in range(0, (pem_parts|length)) %}
-            - {{ pem_parts[i] | basename }} →
-              Önce: {{ 'VAR' if (j17_list_before.results[i].rc|default(1)) == 0 else 'YOK' }}
-              Import: {% if (j17_list_before.results[i].rc|default(1)) != 0 %}{{ 'BAŞARILI' if (j17_import.results[i].rc|default(1)) == 0 else 'HATA' }}{% else %}GEREK YOK{% endif %}
-              Sonra: {{ 'VAR' if (j17_list_after.results[i].rc|default(1)) == 0 else 'YOK' }}
-          {% endfor %}
-          {% endif %}
+          Java 17 ({{ ks_java17 }}):
+            - Keystore var mı?: {{ 'EVET' if j17_ks.stat.exists else 'HAYIR' }}
+            {% if j17_ks.stat.exists %}
+            - Öncesinde alias var mıydı?: {{ 'EVET' if (j17_before.rc|default(1)) == 0 else 'HAYIR' }}
+            - Import yapıldı mı?: {% if (j17_before.rc|default(1)) != 0 %}{{ 'EVET' if (j17_import.rc|default(1)) == 0 else 'HATA' }}{% else %}GEREK YOK{% endif %}
+            - Son durumda alias var mı?: {{ 'EVET' if (j17_after.rc|default(1)) == 0 else 'HAYIR' }}
+            {% endif %}
 
-          Java 8: {{ 'VAR' if j8_ks.stat.exists else 'YOK' }}
-          {% if j8_ks.stat.exists %}
-          {% for i in range(0, (pem_parts|length)) %}
-            - {{ pem_parts[i] | basename }} →
-              Önce: {{ 'VAR' if (j8_list_before.results[i].rc|default(1)) == 0 else 'YOK' }}
-              Import: {% if (j8_list_before.results[i].rc|default(1)) != 0 %}{{ 'BAŞARILI' if (j8_import.results[i].rc|default(1)) == 0 else 'HATA' }}{% else %}GEREK YOK{% endif %}
-              Sonra: {{ 'VAR' if (j8_list_after.results[i].rc|default(1)) == 0 else 'YOK' }}
-          {% endfor %}
-          {% endif %}
+          Java 8 ({{ ks_java8 }}):
+            - Keystore var mı?: {{ 'EVET' if j8_ks.stat.exists else 'HAYIR' }}
+            {% if j8_ks.stat.exists %}
+            - Öncesinde alias var mıydı?: {{ 'EVET' if (j8_before.rc|default(1)) == 0 else 'HAYIR' }}
+            - Import yapıldı mı?: {% if (j8_before.rc|default(1)) != 0 %}{{ 'EVET' if (j8_import.rc|default(1)) == 0 else 'HATA' }}{% else %}GEREK YOK{% endif %}
+            - Son durumda alias var mı?: {{ 'EVET' if (j8_after.rc|default(1)) == 0 else 'HAYIR' }}
+            {% endif %}
